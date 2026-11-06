@@ -4,6 +4,8 @@ export const t = {
   common: {
     save: "ذخیره",
     saved: "ذخیره شد.",
+    chooseFile: "انتخاب فایل",
+    noFile: "فایلی انتخاب نشده است",
     saving: "در حال ذخیره…",
     cancel: "انصراف",
     confirm: "تأیید",

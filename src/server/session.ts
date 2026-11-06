@@ -3,7 +3,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { resolveSession, type SessionUser } from "./auth";
-import { assertAdmin, assertMaster, assertStudent, type MasterActor } from "./authz";
+import { assertMaster, assertStudent, type MasterActor } from "./authz";
 import { AppError, ForbiddenError } from "./errors";
 
 const COOKIE = "tq_session";
@@ -41,23 +41,28 @@ async function requireUser(): Promise<SessionUser> {
   return user;
 }
 
-/** For pages and server actions. Redirects when not signed in; throws when the role is wrong. */
-export async function requireMaster(): Promise<SessionUser & MasterActor> {
+/**
+ * For pages and server actions. Anyone without the role goes to their own home page.
+ * The services check the role again, so a mistake here still cannot expose data.
+ */
+async function requireRole(role: SessionUser["role"]): Promise<SessionUser> {
   const user = await requireUser();
+  if (user.role !== role) redirect(homePath(user.role));
+  return user;
+}
+
+export async function requireMaster(): Promise<SessionUser & MasterActor> {
+  const user = await requireRole("MASTER");
   assertMaster(user);
   return user;
 }
 
 export async function requireStudent(): Promise<SessionUser> {
-  const user = await requireUser();
-  assertStudent(user);
-  return user;
+  return requireRole("STUDENT");
 }
 
 export async function requireAdmin(): Promise<SessionUser> {
-  const user = await requireUser();
-  assertAdmin(user);
-  return user;
+  return requireRole("ADMIN");
 }
 
 export async function clientIp(): Promise<string> {

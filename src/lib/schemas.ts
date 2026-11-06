@@ -141,8 +141,23 @@ export const saveAnswerInput = z.object({
   timeDeltaMs: z.number().int().min(0).max(3_600_000).default(0),
 });
 
-export function firstError(error: z.ZodError): string {
-  return error.issues[0]?.message && !error.issues[0].message.startsWith("Invalid")
-    ? error.issues[0].message
-    : t.common.invalidInput;
+const FIELD_LABELS: Record<string, string> = {
+  title: t.questions.fields.title,
+  prompt: t.questions.fields.prompt,
+  explanation: t.questions.fields.explanation,
+  symbol: t.questions.symbol,
+  fullName: t.students.fullName,
+  name: t.landing.name,
+  institute: t.landing.institute,
+  orgName: t.admin.orgName,
+  masterName: t.admin.masterName,
+};
+
+/** The message for the first problem, naming the field when "required" alone would be unclear. */
+export function firstError(error: z.ZodError, labels: Record<string, string> = {}): string {
+  const issue = error.issues[0];
+  if (!issue?.message || issue.message.startsWith("Invalid")) return t.common.invalidInput;
+  const field = String(issue.path[0] ?? "");
+  const label = labels[field] ?? FIELD_LABELS[field];
+  return label && issue.message === v.required ? `${label}: ${issue.message}` : issue.message;
 }

@@ -68,6 +68,28 @@ export function ConfirmButton({
   );
 }
 
+/** The browser's own file button is labelled in the browser's language, so this one replaces it. */
+export function FileInput({ id, accept, onFile }: { id: string; accept: string; onFile: (file: File | undefined) => void }) {
+  const [name, setName] = useState<string | null>(null);
+  return (
+    <label htmlFor={id} className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg border border-line px-3 py-2 text-sm focus-within:border-accent hover:bg-surface">
+      <input
+        id={id}
+        type="file"
+        accept={accept}
+        className="sr-only"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          setName(file?.name ?? null);
+          onFile(file);
+        }}
+      />
+      <span className="font-medium text-accent">{t.common.chooseFile}</span>
+      <span className="min-w-0 truncate text-muted" dir="auto">{name ?? t.common.noFile}</span>
+    </label>
+  );
+}
+
 export function CopyField({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (

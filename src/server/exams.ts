@@ -49,7 +49,7 @@ export async function getExam(actor: Actor, id: string, now = new Date()) {
 
 function parseExam(raw: unknown) {
   const parsed = examInput.safeParse(raw);
-  if (!parsed.success) throw new AppError(firstError(parsed.error));
+  if (!parsed.success) throw new AppError(firstError(parsed.error, { title: e.fields.title }));
   const d = parsed.data;
   if (d.endsAt <= d.startsAt) throw new AppError(e.errors.window);
   if (d.durationMinutes * 60_000 > d.endsAt.getTime() - d.startsAt.getTime()) throw new AppError(e.errors.durationTooLong);

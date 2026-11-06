@@ -16,12 +16,12 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader title={a.title} subtitle={a.subtitle} />
-      <form className="mb-5 flex flex-wrap gap-2">
-        <Select name="exam" defaultValue={f.exam ?? ""} aria-label={a.filterExam} className="w-auto">
+      <form className="mb-5 grid max-w-2xl gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <Select name="exam" defaultValue={f.exam ?? ""} aria-label={a.filterExam}>
           <option value="">{a.allExams}</option>
           {exams.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
         </Select>
-        <Select name="group" defaultValue={f.group ?? ""} aria-label={a.filterGroup} className="w-auto">
+        <Select name="group" defaultValue={f.group ?? ""} aria-label={a.filterGroup}>
           <option value="">{a.allGroups}</option>
           {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </Select>

@@ -234,7 +234,7 @@ function positionSizeQuestion(w: Window, title: string): QuestionInput & { wrong
   const entry = w.visible.at(-1)!.close;
   const stop = entry - atr(w.visible) * 1.5;
   const units = 100 / (entry - stop);
-  const fmt = (n: number) => toFaDigits(n.toPrecision(3));
+  const fmt = (n: number) => toFaDigits(n.toPrecision(3)).replace(".", "٫");
   const o = options(`${fmt(units)} واحد`, [`${fmt(units * 2)} واحد`, `${fmt(10000 / entry)} واحد`, `${fmt(units / 2)} واحد`]);
   return {
     ...base(w, [T.risk], "MEDIUM"),
@@ -426,13 +426,13 @@ async function main() {
   const e1 = await makeExam("آزمون میان‌دوره: روند و سطوح", "روند، حمایت و مقاومت و خط روند.", examOne, now - 30 * DAY, now - 29 * DAY, "AFTER_CLOSE", 30);
   for (const [i, s] of students.entries()) {
     if (i === 9) continue;
-    await take(e1, examOne, s, now - 30 * DAY + (i + 1) * 3_600_000, -0.05);
+    await take(e1, examOne, s, now - 30 * DAY + (i + 1) * 3_600_000, -0.2);
   }
 
-  // Exam 2, ten days ago. The class improves a little, but one student drops sharply.
+  // Exam 2, ten days ago. The class improves, but one student drops sharply.
   const e2 = await makeExam("آزمون اسمارت‌مانی و مدیریت ریسک", "FVG، اردر بلاک و محاسبه‌ی حجم.", examTwo, now - 10 * DAY, now - 9 * DAY, "AFTER_CLOSE", 30);
   for (const [i, s] of students.entries()) {
-    await take(e2, examTwo, s, now - 10 * DAY + (i + 1) * 3_600_000, i === 6 ? -0.35 : 0.05);
+    await take(e2, examTwo, s, now - 10 * DAY + (i + 1) * 3_600_000, i === 6 ? -0.15 : 0.15);
   }
 
   // Exam 3 is open now. student01 and student02 are left free so a demo can take it live,
@@ -441,7 +441,7 @@ async function main() {
   for (const [i, s] of students.entries()) {
     if (i < 2) continue;
     if (i === 9) await take(e3, examThree, s, now - 5 * 60_000, 0, false); // still working
-    else await take(e3, examThree, s, now - DAY + (i + 1) * 3_600_000, 0.05);
+    else await take(e3, examThree, s, now - DAY + (i + 1) * 3_600_000, 0.3);
   }
 
   const counts = await db.attempt.groupBy({ by: ["examId"], _avg: { score: true, maxScore: true }, _count: { _all: true } });

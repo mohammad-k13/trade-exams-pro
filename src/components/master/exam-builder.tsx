@@ -95,17 +95,15 @@ export function ExamBuilder({
     };
   }
 
-  function save(publish: boolean) {
+  // Runs inside the caller's transition. A second transition here would block the redirect that
+  // follows a successful save, leaving the master on the form with a saved exam.
+  async function save(publish: boolean): Promise<{ error: string } | undefined> {
     setError(null);
-    return new Promise<{ error: string } | undefined>((resolve) => {
-      start(async () => {
-        const r = await saveExamAction(initial?.id ?? null, payload(), publish);
-        if (r?.error) {
-          setError(r.error);
-          resolve({ error: r.error });
-        } else resolve(undefined);
-      });
-    });
+    const r = await saveExamAction(initial?.id ?? null, payload(), publish);
+    if (r?.error) {
+      setError(r.error);
+      return { error: r.error };
+    }
   }
 
   const toggle = (set: Set<string>, id: string, on: boolean) => {
@@ -244,7 +242,7 @@ export function ExamBuilder({
 
       {error && <Alert>{error}</Alert>}
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" disabled={pending} onClick={() => void save(false)}>{pending ? t.common.saving : e.saveDraft}</Button>
+        <Button variant="secondary" disabled={pending} onClick={() => start(async () => void (await save(false)))}>{pending ? t.common.saving : e.saveDraft}</Button>
         <ConfirmButton label={e.publish} variant="primary" message={e.publishConfirm} confirmLabel={e.publish} action={() => save(true)} />
       </div>
     </div>

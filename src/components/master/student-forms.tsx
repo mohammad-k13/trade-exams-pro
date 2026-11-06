@@ -11,7 +11,7 @@ import {
   updateStudentAction,
 } from "@/app/actions/master";
 import { Alert, Button, Card, Checkbox, Field, Input, LinkButton } from "@/components/ui";
-import { ConfirmButton, CopyField } from "@/components/ui/client";
+import { ConfirmButton, CopyField, FileInput } from "@/components/ui/client";
 import { toFaDigits } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import type { ImportResult } from "@/server/students";
@@ -189,7 +189,7 @@ export function ImportForm() {
       <div className="space-y-4">
         {error && <Alert>{error}</Alert>}
         <Field label={s.importFile} htmlFor="csv" hint={s.importHint}>
-          <Input id="csv" type="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <FileInput id="csv" accept=".csv,text/csv" onFile={(f) => setFile(f ?? null)} />
         </Field>
         <pre dir="ltr" className="overflow-x-auto rounded-lg bg-surface p-3 text-start text-xs leading-5 text-muted">
           full_name,username,phone,group{"\n"}علی رضایی,ali.rezaei,09121234567,کلاس فارکس

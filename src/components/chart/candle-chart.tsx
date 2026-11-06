@@ -95,9 +95,12 @@ export function CandleChart({
   const toolsKey = tools.join(",");
   const readOnly = tools.length === 0;
 
+  // Kept in refs: callers pass new arrays and functions each render, which must not redraw anything.
+  const singleToolsRef = useRef(singleTools);
   useEffect(() => {
     onChangeRef.current = onDrawingsChange;
-  }, [onDrawingsChange]);
+    singleToolsRef.current = singleTools;
+  }, [onDrawingsChange, singleTools]);
 
   const emit = useCallback(() => {
     onChangeRef.current?.([...liveRef.current.values()]);
@@ -117,9 +120,9 @@ export function CandleChart({
         lock: readOnly,
         styles: { line: { color: COLORS.student, size: 2 }, point: { color: COLORS.student, borderColor: COLORS.student, activeColor: COLORS.student, activeBorderColor: COLORS.student } },
         onDrawEnd: ({ overlay }: { overlay: { id: string; name: string; points: { dataIndex?: number; value?: number }[] } }) => {
-          if (singleTools.includes(tool)) {
+          if (singleToolsRef.current.includes(tool)) {
             for (const [id, d] of [...liveRef.current]) {
-              if (singleTools.includes(d.tool)) {
+              if (singleToolsRef.current.includes(d.tool)) {
                 chartRef.current?.removeOverlay({ id });
                 liveRef.current.delete(id);
               }
@@ -152,7 +155,7 @@ export function CandleChart({
         chart.createOverlay(common as never);
       }
     },
-    [readOnly, singleTools, emit, candles],
+    [readOnly, emit, candles],
   );
 
   // Create the chart once per data set. Canvas text cannot use CSS, so everything is set here.
@@ -263,6 +266,7 @@ export function CandleChart({
   useEffect(() => {
     if (!ready) return;
     for (const d of initialDrawings.current ?? []) addOverlay(d.tool, d.points);
+    // Runs once for each chart created. Later drawings already live on the chart.
   }, [ready, addOverlay]);
 
   // Reference overlays: the correct answer, tolerance band, pivots and the reveal boundary.

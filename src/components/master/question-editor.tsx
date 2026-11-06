@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { loadBinanceAction, parseCsvAction, saveQuestionAction } from "@/app/actions/master";
 import { CandleChart, type ReferenceOverlay } from "@/components/chart/candle-chart";
 import { Alert, Button, Card, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
+import { FileInput } from "@/components/ui/client";
 import { JalaliPicker } from "@/components/ui/jalali-picker";
 import { TIMEFRAMES, pricePrecision, suggestTolerancePct, type Candle } from "@/lib/candles";
 import { formatNumber, toFaDigits, toLatinDigits } from "@/lib/format";
@@ -232,7 +233,7 @@ export function QuestionEditor({ initial, now, topicSuggestions }: { initial?: E
           ) : (
             <div className="sm:col-span-2">
               <Field label={q.csvFile} htmlFor="candles-csv" hint={q.csvHint}>
-                <Input id="candles-csv" type="file" accept=".csv,text/csv" onChange={(e) => uploadCsv(e.target.files?.[0])} />
+                <FileInput id="candles-csv" accept=".csv,text/csv" onFile={uploadCsv} />
               </Field>
             </div>
           )}
