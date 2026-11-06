@@ -1,5 +1,5 @@
-import { TIMEFRAMES, findPivots, isValidCandle, type Candle, type Pivot } from "@/lib/candles";
-import { lineValueAt, type AnswerKey } from "@/lib/grading";
+import { TIMEFRAMES, isValidCandle, type Candle } from "@/lib/candles";
+import { pivotsOnLine, type AnswerKey } from "@/lib/grading";
 import { t } from "@/lib/i18n";
 import { MAX_CANDLES, firstError, questionInput } from "@/lib/schemas";
 import { Prisma } from "@/generated/prisma/client";
@@ -57,18 +57,6 @@ export async function getQuestion(actor: Actor, id: string) {
   });
   if (!question) throw new NotFoundError();
   return question;
-}
-
-/** The master's pivots: swing points the reference line passes within tolerance of. */
-export function pivotsOnLine(
-  visible: Candle[],
-  line: [{ index: number; price: number }, { index: number; price: number }],
-  tolerancePct: number,
-): Pivot[] {
-  return findPivots(visible).filter((p) => {
-    const value = lineValueAt("straightLine", line[0], line[1], p.index);
-    return value !== null && (Math.abs(value - p.price) / p.price) * 100 <= tolerancePct;
-  });
 }
 
 function buildData(raw: unknown) {
@@ -217,12 +205,15 @@ export async function fetchBinanceCandles(
 
   const url = `${BINANCE_URL}?symbol=${symbol}&interval=${input.timeframe}&startTime=${input.from}&endTime=${input.to}&limit=${MAX_CANDLES}`;
   let rows: unknown;
+  let status: number | null = null;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(10_000), cache: "no-store" });
+    status = res.status;
     if (!res.ok) throw new Error(String(res.status));
     rows = await res.json();
   } catch {
-    throw new AppError(q.binanceError, 502);
+    // 451 and 403 are Binance's regional restriction. Retrying won't help, so point to CSV.
+    throw new AppError(status === 451 || status === 403 ? q.binanceBlocked : q.binanceError, 502);
   }
   if (!Array.isArray(rows)) throw new AppError(q.binanceError, 502);
   return rows.map((r: string[]) => ({

@@ -1,6 +1,6 @@
 // Pure grading rules. No I/O, so they run in tests exactly as in production.
 // The rules are documented for humans in docs/decisions.md.
-import type { Candle } from "@/lib/candles";
+import { findPivots, type Candle, type Pivot } from "@/lib/candles";
 
 export type Direction = "up" | "down" | "sideways";
 
@@ -85,6 +85,14 @@ export function lineValueAt(tool: string, a: DrawPoint, b: DrawPoint, index: num
   if (tool === "segment" && (index < lo || index > hi)) return null;
   if (tool === "rayLine" && (b.index > a.index ? index < a.index : index > a.index)) return null;
   return a.price + ((b.price - a.price) * (index - a.index)) / (b.index - a.index);
+}
+
+/** The master's pivots: swing points the reference line passes within tolerance of. */
+export function pivotsOnLine(visible: Candle[], line: [DrawPoint, DrawPoint], tolerancePct: number): Pivot[] {
+  return findPivots(visible).filter((p) => {
+    const value = lineValueAt("straightLine", line[0], line[1], p.index);
+    return value !== null && (Math.abs(value - p.price) / p.price) * 100 <= tolerancePct;
+  });
 }
 
 function lastDrawing(drawings: Drawing[] | undefined, tools: string[], minPoints: number): Drawing | null {
