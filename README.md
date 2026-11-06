@@ -42,7 +42,7 @@ npm run dev
 
 `student01` و `student02` هنوز در «آزمون جامع این هفته» شرکت نکرده‌اند و بعد از ثبت، بلافاصله نتیجه و ادامه‌ی چارت را می‌بینند. برای دمو از این دو حساب استفاده کنید.
 
-برای پاک‌کردن همه‌چیز و ساخت دوباره‌ی داده‌ی نمونه، این دستور را اجرا کنید. در محیط production کار نمی‌کند:
+برای پاک‌کردن همه‌چیز و ساخت دوباره‌ی داده‌ی نمونه، این دستور را اجرا کنید. فقط روی پایگاه داده‌ی محلی کار می‌کند:
 
 ```bash
 SEED_RESET=1 npm run db:seed
@@ -55,7 +55,7 @@ SEED_RESET=1 npm run db:seed
 | `DATABASE_URL` | اتصال برنامه به پایگاه داده (در Neon، آدرس pooled) |
 | `DIRECT_URL` | اتصال مستقیم برای migration |
 | `APP_URL` | آدرس عمومی سایت، برای لینک‌های دعوت |
-| `SEED_PASSWORD` | رمز حساب‌های نمونه؛ در production الزامی است |
+| `SEED_PASSWORD` | رمز حساب‌های نمونه؛ روی پایگاه داده‌ی غیرمحلی الزامی است (حداقل ۱۲ نویسه) |
 
 ## تست
 
@@ -67,15 +67,7 @@ npm test
 
 ## انتشار روی Vercel
 
-1. در [Neon](https://neon.tech) یک پایگاه داده‌ی رایگان بسازید و هر دو آدرس pooled و direct را بردارید.
-2. پروژه را در Vercel وارد کنید، متغیرهای بالا را تنظیم کنید و منطقه‌ی Functions را نزدیک پایگاه داده بگذارید.
-3. migrationها را از سیستم خودتان اجرا کنید. این کار عمداً بخشی از build نیست:
-
-```bash
-DIRECT_URL="آدرس-direct" npm run db:deploy
-```
-
-4. برای ساخت مدیر سیستم، seed را یک بار با `SEED_PASSWORD` قوی اجرا کنید. این کار داده‌ی نمونه هم می‌سازد.
+مراحل کامل در [چک‌لیست انتشار](docs/deploy.md) آمده است (به انگلیسی). خلاصه: یک پایگاه داده در Neon بسازید، migrationها را از سیستم خودتان اجرا کنید، با `db:seed` یا `db:create-admin` داده‌ی اولیه بسازید و متغیرها را در Vercel تنظیم کنید.
 
 **پیش از پایلوت:** دسترسی را از شبکه‌ی واقعی موسسه‌ها بررسی کنید. Vercel و Neon شرکت‌های آمریکایی هستند و ممکن است از ایران در دسترس یا مجاز نباشند. برنامه فقط به Node و PostgreSQL نیاز دارد و روی هر سرور دیگری هم اجرا می‌شود. بایننس هم ممکن است درخواست‌ها را بر اساس موقعیت سرور رد کند؛ در این صورت ویرایشگر سؤال پیام می‌دهد و می‌توانید از CSV استفاده کنید.
 
@@ -127,7 +119,7 @@ Every password is `demo-password-1` unless you set `SEED_PASSWORD`.
 
 `student01` and `student02` have not taken the open exam, and its review opens right after submitting, so use them to show the reveal in a demo.
 
-To wipe everything and reseed (refused in production):
+To wipe everything and reseed (local databases only):
 
 ```bash
 SEED_RESET=1 npm run db:seed
@@ -140,7 +132,7 @@ SEED_RESET=1 npm run db:seed
 | `DATABASE_URL` | App connection (Neon: the pooled URL) |
 | `DIRECT_URL` | Direct connection for migrations |
 | `APP_URL` | Public site URL, used in invite links |
-| `SEED_PASSWORD` | Password for seeded accounts; required in production |
+| `SEED_PASSWORD` | Password for seeded accounts; required on a non-local database (at least 12 characters) |
 
 ## Tests
 
@@ -152,15 +144,7 @@ npm test
 
 ## Deploy to Vercel
 
-1. Create a free [Neon](https://neon.tech) database and copy both the pooled and direct URLs.
-2. Import the project into Vercel, set the variables above, and pick a Functions region near the database.
-3. Run migrations from your machine. They are deliberately not part of the build:
-
-```bash
-DIRECT_URL="your-direct-url" npm run db:deploy
-```
-
-4. Seed once with a strong `SEED_PASSWORD` to create the admin account. This also creates the demo institute.
+The full steps are in the [deployment checklist](docs/deploy.md). In short: create a Neon database, run migrations from your machine, create first data with `db:seed` or `db:create-admin`, and set the variables on Vercel.
 
 **Before a pilot:** test access from the institutes' real networks. Vercel and Neon are US services and may be unreachable or not permitted from Iran. The app only needs Node and PostgreSQL, so it can run on any host. Binance may also refuse requests based on the server's location; the question editor then says so and CSV upload still works.
 

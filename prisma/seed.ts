@@ -314,13 +314,17 @@ function responseFor(q: Prepared, right: boolean) {
 }
 
 async function main() {
-  const production = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+  // A laptop seeding Neon has no NODE_ENV, so anything that isn't a local database counts as production.
+  const local = /@(localhost|127\.0\.0\.1|\[::1\]|db)(:|\/)/.test(process.env.DATABASE_URL ?? "");
+  const production = !local || process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+  if (production && process.env.SEED_RESET === "1") throw new Error("SEED_RESET is refused on a non-local database.");
   const password = process.env.SEED_PASSWORD || (production ? "" : "demo-password-1");
-  if (!password) throw new Error("Set SEED_PASSWORD to seed a production database.");
+  if (!password) throw new Error("Set SEED_PASSWORD to seed a non-local database.");
+  if (production && password.length < 12) throw new Error("SEED_PASSWORD must be at least 12 characters on a non-local database.");
 
   if (await db.user.findFirst({ where: { role: "ADMIN" } })) {
-    if (process.env.SEED_RESET !== "1" || production) {
-      console.log("Database already has data; nothing changed. Set SEED_RESET=1 to wipe and reseed (never in production).");
+    if (process.env.SEED_RESET !== "1") {
+      console.log("Database already has data; nothing changed. On a local database, SEED_RESET=1 wipes and reseeds.");
       return;
     }
     await db.$executeRawUnsafe(
