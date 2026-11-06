@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { FormState } from "@/app/actions/auth";
 import { Alert, Button, Field, Input } from "@/components/ui";
+import { keepValues } from "@/components/ui/client";
 import { t } from "@/lib/i18n";
 
 const a = t.auth;
@@ -11,7 +12,7 @@ type Action = (state: FormState, form: FormData) => Promise<FormState>;
 export function LoginForm({ action }: { action: Action }) {
   const [state, formAction, pending] = useActionState(action, {});
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} onSubmit={keepValues(formAction)} className="space-y-4">
       {state.error && <Alert>{state.error}</Alert>}
       <Field label={a.identifier} htmlFor="identifier">
         <Input id="identifier" name="identifier" required autoComplete="username" dir="ltr" className="text-start" />
@@ -29,7 +30,7 @@ export function LoginForm({ action }: { action: Action }) {
 export function PasswordForm({ action, withCurrent, submit }: { action: Action; withCurrent: boolean; submit: string }) {
   const [state, formAction, pending] = useActionState(action, {});
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} onSubmit={keepValues(formAction)} className="space-y-4">
       {state.error && <Alert>{state.error}</Alert>}
       {withCurrent && (
         <Field label={a.currentPassword} htmlFor="current">

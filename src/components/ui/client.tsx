@@ -1,9 +1,21 @@
 "use client";
 
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { startTransition, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { t } from "@/lib/i18n";
 import type { ActionResult } from "@/server/action";
 import { Alert, Button, type ButtonVariant } from "./index";
+
+/**
+ * React clears a form after its action runs, so a validation error would wipe what the person typed.
+ * Pass this as onSubmit next to action={...}; action stays as the fallback without JavaScript.
+ */
+export function keepValues(action: (form: FormData) => void) {
+  return (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    startTransition(() => action(form));
+  };
+}
 
 /** A button that asks first and then runs a server action. Used for every destructive step. */
 export function ConfirmButton({

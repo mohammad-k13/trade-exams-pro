@@ -11,7 +11,7 @@ import {
   updateStudentAction,
 } from "@/app/actions/master";
 import { Alert, Button, Card, Checkbox, Field, Input, LinkButton } from "@/components/ui";
-import { ConfirmButton, CopyField, FileInput } from "@/components/ui/client";
+import { ConfirmButton, CopyField, FileInput, keepValues } from "@/components/ui/client";
 import { toFaDigits } from "@/lib/format";
 import { t } from "@/lib/i18n";
 import type { ImportResult } from "@/server/students";
@@ -79,7 +79,7 @@ export function StudentForm({
 
   return (
     <Card className="max-w-lg">
-      <form action={submit} className="space-y-4">
+      <form action={submit} onSubmit={keepValues(submit)} className="space-y-4">
         {error && <Alert>{error}</Alert>}
         {saved && <Alert tone="good">{t.common.saved}</Alert>}
         <Field label={s.fullName} htmlFor="fullName">

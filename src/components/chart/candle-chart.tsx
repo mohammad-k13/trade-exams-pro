@@ -40,7 +40,8 @@ function formatTick(ts: number, withDates: boolean, stepMs: number): string {
   if (!withDates) return "";
   const p = toJalaliParts(new Date(ts));
   const pad = (n: number) => String(n).padStart(2, "0");
-  if (stepMs >= TIMEFRAMES["1d"]) return toFaDigits(`${p.jd}`) + " " + JALALI_MONTHS[p.jm - 1];
+  // From hourly up, the date says more than a clock time that repeats on every tick.
+  if (stepMs >= TIMEFRAMES["1h"]) return toFaDigits(`${p.jd}`) + " " + JALALI_MONTHS[p.jm - 1];
   return toFaDigits(`${pad(p.hour)}:${pad(p.minute)}`);
 }
 
@@ -186,6 +187,20 @@ export function CandleChart({
         month: "ماه",
         year: "سال",
       });
+      // A plain dot exactly on the candle. The built-in annotation floats above it on a long stem.
+      kc.registerOverlay({
+        name: "pivotDot",
+        totalStep: 2,
+        needDefaultPointFigure: false,
+        needDefaultXAxisFigure: false,
+        needDefaultYAxisFigure: false,
+        createPointFigures: ({ coordinates, overlay }) => ({
+          type: "circle",
+          attrs: { x: coordinates[0].x, y: coordinates[0].y, r: 4 },
+          styles: { style: "fill", color: overlay.extendData as string },
+          ignoreEvent: true,
+        }),
+      });
       const stepMs = TIMEFRAMES[timeframe] ?? 3_600_000;
       const font = "Vazirmatn Variable, system-ui, sans-serif";
       const chart = kc.init(el, {
@@ -299,10 +314,9 @@ export function CandleChart({
         const p = r.points[0];
         ids.push(chart.createOverlay({
           ...base,
-          name: "simpleAnnotation",
-          extendData: "●",
+          name: "pivotDot",
+          extendData: r.color,
           points: [{ timestamp: tsAt(p.index), dataIndex: p.index, value: p.price }],
-          styles: { line: { color: "transparent" }, text: { color: r.color, backgroundColor: "transparent", borderColor: "transparent", size: 14 } },
         } as never) as string | null);
       }
     }
