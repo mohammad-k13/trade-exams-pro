@@ -1,13 +1,16 @@
 # Deployment checklist
 
-Target: Vercel in Frankfurt (`fra1`, set in `vercel.json`) and Neon in AWS Frankfurt (`aws-eu-central-1`), so the
+Target: Vercel in Washington, D.C. (`iad1`, set in `vercel.json`) and Neon in AWS Virginia (`aws-us-east-1`), so the
 two stay close. Both free tiers are enough for a demo. Neither account needs a card for this.
+
+Binance restricts some regions, and `iad1` is in the US, so fetching candles may be refused there. The question
+editor then says so and CSV upload still works. Exams are unaffected, because candles are stored with each question.
 
 Migrations are deliberately not part of the build, so a failed deploy cannot leave the schema half changed.
 
 ## 1. Database (Neon)
 
-1. Create a project in `aws-eu-central-1`.
+1. Create a project in `aws-us-east-1`.
 2. Copy both connection strings: the pooled one (host contains `-pooler`) and the direct one.
 
 ## 2. Schema and first data
