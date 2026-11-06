@@ -1,0 +1,335 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MASTER
+  STUDENT
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  DIRECTION
+  DRAW_LEVEL
+  DRAW_TRENDLINE
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ReviewPolicy {
+  NEVER
+  AFTER_SUBMIT
+  AFTER_CLOSE
+  AT_TIME
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  TIMED_OUT
+}
+
+model Organization {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  deletedAt DateTime? @db.Timestamptz(3)
+
+  users     User[]
+  groups    Group[]
+  topics    Topic[]
+  questions Question[]
+  exams     Exam[]
+  auditLogs AuditLog[]
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  organizationId     String?
+  role               Role
+  username           String    @unique
+  phone              String?   @unique
+  fullName           String
+  passwordHash       String
+  mustChangePassword Boolean   @default(false)
+  isActive           Boolean   @default(true)
+  onboardingDismissedAt DateTime? @db.Timestamptz(3)
+  lastLoginAt        DateTime? @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @db.Timestamptz(3)
+  deletedAt          DateTime? @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  sessions     Session[]
+  invites      InviteToken[]
+  memberships  GroupMember[]
+  assignments  ExamStudent[]
+  attempts     Attempt[]
+
+  @@index([organizationId, role])
+}
+
+model Session {
+  /// SHA-256 of the cookie token; the raw token is never stored.
+  id        String   @id
+  userId    String
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model InviteToken {
+  /// SHA-256 of the token in the invite link.
+  id        String    @id
+  userId    String
+  expiresAt DateTime  @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Fixed-window counters. Kept in Postgres because serverless memory is not shared.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime @db.Timestamptz(3)
+}
+
+model Group {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  deletedAt      DateTime? @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  members      GroupMember[]
+  exams        ExamGroup[]
+
+  @@index([organizationId])
+}
+
+model GroupMember {
+  groupId String
+  userId  String
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@index([userId])
+}
+
+model Topic {
+  id             String @id @default(cuid())
+  organizationId String
+  name           String
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  questions    QuestionTopic[]
+
+  @@unique([organizationId, name])
+}
+
+model Question {
+  id             String       @id @default(cuid())
+  organizationId String
+  createdById    String
+  type           QuestionType
+  title          String
+  prompt         String
+  explanation    String
+  difficulty     Difficulty   @default(MEDIUM)
+  symbol         String
+  timeframe      String
+  /// When true, students see no symbol or real dates until review.
+  anonymize      Boolean      @default(true)
+  visibleCandles Json
+  /// Secret until review. Never select this for a student-facing query.
+  futureCandles  Json
+  allowedTools   String[]
+  /// [{ id, text }] without any correctness flag.
+  options        Json?
+  /// Secret until review. Shape depends on type; see src/lib/grading.
+  answerKey      Json
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+  deletedAt      DateTime?    @db.Timestamptz(3)
+
+  organization  Organization    @relation(fields: [organizationId], references: [id])
+  topics        QuestionTopic[]
+  examQuestions ExamQuestion[]
+
+  @@index([organizationId, deletedAt])
+}
+
+model QuestionTopic {
+  questionId String
+  topicId    String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  topic    Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, topicId])
+}
+
+model Exam {
+  id              String       @id @default(cuid())
+  organizationId  String
+  createdById     String
+  title           String
+  description     String       @default("")
+  status          ExamStatus   @default(DRAFT)
+  durationMinutes Int
+  startsAt        DateTime     @db.Timestamptz(3)
+  endsAt          DateTime     @db.Timestamptz(3)
+  maxAttempts     Int          @default(1)
+  shuffleQuestions Boolean     @default(false)
+  shuffleOptions  Boolean      @default(false)
+  reviewPolicy    ReviewPolicy @default(AFTER_CLOSE)
+  reviewAt        DateTime?    @db.Timestamptz(3)
+  publishedAt     DateTime?    @db.Timestamptz(3)
+  closedAt        DateTime?    @db.Timestamptz(3)
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime?    @db.Timestamptz(3)
+
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  questions    ExamQuestion[]
+  students     ExamStudent[]
+  groups       ExamGroup[]
+  attempts     Attempt[]
+
+  @@index([organizationId, deletedAt])
+}
+
+model ExamQuestion {
+  id         String @id @default(cuid())
+  examId     String
+  questionId String
+  position   Int
+  points     Int    @default(1)
+  /// Frozen copy of the question at publish time. Secret until review.
+  snapshot   Json?
+
+  exam     Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id])
+  answers  Answer[]
+
+  @@unique([examId, questionId])
+  @@index([examId, position])
+}
+
+model ExamStudent {
+  examId String
+  userId String
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([examId, userId])
+  @@index([userId])
+}
+
+model ExamGroup {
+  examId  String
+  groupId String
+
+  exam  Exam  @relation(fields: [examId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([examId, groupId])
+  @@index([groupId])
+}
+
+model Attempt {
+  id            String        @id @default(cuid())
+  examId        String
+  studentId     String
+  number        Int
+  status        AttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime      @db.Timestamptz(3)
+  /// Server-side limit: min(startedAt + duration, exam end).
+  deadlineAt    DateTime      @db.Timestamptz(3)
+  submittedAt   DateTime?     @db.Timestamptz(3)
+  score         Float?
+  maxScore      Float?
+  /// ExamQuestion ids in the order this student sees them.
+  questionOrder Json
+  /// { [examQuestionId]: optionId[] }
+  optionOrder   Json
+
+  exam    Exam     @relation(fields: [examId], references: [id])
+  student User     @relation(fields: [studentId], references: [id])
+  answers Answer[]
+
+  @@unique([examId, studentId, number])
+  @@index([studentId, status])
+  @@index([examId, status])
+}
+
+model Answer {
+  id             String   @id @default(cuid())
+  attemptId      String
+  examQuestionId String
+  response       Json?
+  flagged        Boolean  @default(false)
+  /// Client-reported and clamped. Used for analytics only, never grading.
+  timeSpentMs    Int      @default(0)
+  isCorrect      Boolean?
+  points         Float?
+  /// Evidence for the grade, for example distance and tolerance.
+  gradingDetail  Json?
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  attempt      Attempt      @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  examQuestion ExamQuestion @relation(fields: [examQuestionId], references: [id])
+
+  @@unique([attemptId, examQuestionId])
+  @@index([examQuestionId])
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  actorId        String?
+  action         String
+  entityType     String?
+  entityId       String?
+  meta           Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+}
+
+model DemoRequest {
+  id        String    @id @default(cuid())
+  name      String
+  institute String
+  phone     String
+  message   String    @default("")
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  handledAt DateTime? @db.Timestamptz(3)
+}
