@@ -12,9 +12,8 @@ import type { TopicStat } from "@/server/attempts";
 
 const r = t.result;
 
-const num = (n: number) => formatNumber(n, 6);
-
-function evidenceText(d: GradingDetail | null): string | null {
+function evidenceText(d: GradingDetail | null, precision: number): string | null {
+  const num = (n: number) => formatNumber(n, precision);
   if (!d) return null;
   if (d.kind === "level") {
     if (d.drawn === null || d.distancePct === null) return r.noLine;
@@ -60,7 +59,7 @@ function QuestionReview({ q, n }: { q: ReviewQuestion; n: number }) {
     return list;
   }, [q]);
   const texts = answerTexts(q);
-  const evidence = evidenceText(q.detail);
+  const evidence = evidenceText(q.detail, q.precision);
 
   return (
     <Card className="print-break">

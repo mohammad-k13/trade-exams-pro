@@ -56,7 +56,7 @@ function slice(source: Source, offset: number) {
 }
 type Window = ReturnType<typeof slice>;
 
-const price = (w: Window, v: number) => toFaDigits(v.toFixed(pricePrecision(w.visible)));
+const price = (w: Window, v: number) => toFaDigits(String(Number(v.toFixed(pricePrecision(w.visible))))).replace(".", "٫");
 const range = (w: Window, lo: number, hi: number) => `${price(w, lo)} تا ${price(w, hi)}`;
 
 function base(w: Window, topics: string[], difficulty: "EASY" | "MEDIUM" | "HARD") {

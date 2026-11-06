@@ -44,6 +44,15 @@ function formatTick(ts: number, withDates: boolean, stepMs: number): string {
   return toFaDigits(`${pad(p.hour)}:${pad(p.minute)}`);
 }
 
+/** Shows every candle. In review, the answer and hidden candles must not start out of view. */
+function fitAll(chart: Chart, el: HTMLElement, count: number) {
+  if (!count) return;
+  const Y_AXIS_WIDTH = 80;
+  chart.setOffsetRightDistance(16);
+  chart.setBarSpace(Math.max(1.5, (el.clientWidth - Y_AXIS_WIDTH - 16) / count));
+  chart.scrollToRealTime();
+}
+
 export interface CandleChartProps {
   candles: Candle[];
   timeframe: string;
@@ -221,6 +230,7 @@ export function CandleChart({
       chart.setSymbol({ ticker: "chart", pricePrecision: precision, volumePrecision: 0 });
       chart.setPeriod(periodOf(timeframe));
       chart.setDataLoader({ getBars: ({ callback }) => callback(candles as never, false) });
+      fitAll(chart, el, candles.length);
       setReady(true);
     });
 
@@ -238,7 +248,12 @@ export function CandleChart({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(() => chartRef.current?.resize());
+    const observer = new ResizeObserver(() => {
+      const chart = chartRef.current;
+      if (!chart) return;
+      chart.resize();
+      fitAll(chart, el, chart.getDataList().length);
+    });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
