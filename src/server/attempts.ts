@@ -102,7 +102,9 @@ export async function finalizeAttempt(attemptId: string, status: "SUBMITTED" | "
     }
     await tx.attempt.update({ where: { id: attemptId }, data: { score, maxScore } });
     return true;
-  });
+    // Prisma's 5s default is too tight for a Neon cold start or a slow link, and a timed-out
+    // transaction would leave the student's attempt ungraded.
+  }, { maxWait: 15_000, timeout: 30_000 });
 }
 
 /** Serverless has no timer, so overdue attempts are closed whenever someone next looks at them. */
